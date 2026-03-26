@@ -17,12 +17,20 @@ import metadataRoutes from '@/routes/metadata'
 import cacheRoutes from '@/routes/cache'
 import imageOptimizerRoutes from '@/routes/imageOptimizer'
 
+import mongoose from 'mongoose'
+
 dotenv.config()
 
 const logger = createLogger('Server')
 
 const app = express()
 const PORT = process.env.PORT || 5000
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/muse'
+
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI)
+  .then(() => logger.info('✅ Successfully connected to MongoDB'))
+  .catch((err) => logger.error('❌ Error connecting to MongoDB:', err))
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -69,12 +77,14 @@ app.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully')
   await cacheService.disconnect()
+  await mongoose.disconnect()
   process.exit(0)
 })
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully')
   await cacheService.disconnect()
+  await mongoose.disconnect()
   process.exit(0)
 })
 
